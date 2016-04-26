@@ -1,6 +1,49 @@
 #include "num.h"
 #include <string.h>
 
+#define INF 99999999.0
+
+static inline int is_positive(float x) {
+    if (x < 0)
+        return 0;
+    else
+        return 1;
+}
+
+static inline float rel_error(float old, float new) {
+    float result = (new - old) / new*100;
+    if (is_positive(result))
+        return result;
+    else
+        return -1.f * result;
+
+void bisection(float* results, float *xmin, float *xmax, float *es, int *maxit) {
+	float x_lo = xmin[0];
+	float x_hi = xmax[0];
+	float croot = (x_lo + x_hi)/2;
+
+	if (xmin[0]*xmax[0] < 0) {
+		float ea = INF;
+		int iter = 0;
+
+		while (ea > es[0] && iter <= maxit[0]) {
+			croot = (x_lo + x_hi)/2;
+			if (!is_positive(x_lo*croot)) {
+				ea = rel_error(x_lo, croot);
+				x_hi = croot;
+			}
+			else {
+				ea = rel_error(croot, x_hi);
+				x_lo = croot;
+			}
+			iter++;
+		}
+	}
+	float_result[0] = croot;
+}
+
+void falseposition(float min, float max, float es, int
+
 void gaussjordan(matrix *a, float *b, float* results) {
     long i, j, k;
 
