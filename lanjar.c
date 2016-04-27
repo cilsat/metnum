@@ -1,18 +1,27 @@
 #include "num.h"
 #include <stdio.h>
 
+#define PREC "%.5f "
+
+void reset(double *arr, long n) {
+    for (long i = 0; i < n; i++) {
+        printf(PREC, arr[i]);
+        arr[i] = 0.f;
+    }
+}
+
 int main() {
-    long i, size;
+    long i, n;
     matrix *a;
     double *b, *c;
 
     /***** SOAL 1 *****/
-    size = 4;
-    a = m_init(size, size);
-    b = (double *) malloc(size * sizeof(double));
-    c = (double *) malloc(size * sizeof(double));
+    n = 4;
+    a = m_init(n, n);
+    b = (double *) malloc(n * sizeof(double));
+    c = (double *) malloc(n * sizeof(double));
 
-    for (i = 0; i < size; i++) {
+    for (i = 0; i < n; i++) {
         c[i] = 0.f;
     }
 
@@ -24,26 +33,21 @@ int main() {
 
     printf("\nsoal 1\n");
     m_print(a);
-    printf("gauss naive: ");
+    printf("gauss naive:\n ");
     gaussnaive(a, b, c);
-    for (i = 0; i < size; i++) {
-        printf("%.5f ", c[i]);
-        c[i] = 0.f;
-    }
+    reset(c, n);
     printf("\n");
-    printf("gauss jordan: ");
+    printf("gauss jordan:\n ");
     gaussjordan(a, b, c);
-    for (i = 0; i < size; i++) {
-        printf("%.5f ", c[i]);
-        c[i] = 0.f;
-    }
+    reset(c, n);
     printf("\n");
-    printf("LU decomposition: ");
-    ludecomp(a, b, c);
-    for (i = 0; i < size; i++) {
-        printf("%.5f ", c[i]);
-        c[i] = 0.f;
-    }
+    printf("doolittle decomposition:\n ");
+    doolittle(a, b, c);
+    reset(c, n);
+    printf("\n");
+    printf("crout decomposition:\n ");
+    crout(a, b, c);
+    reset(c, n);
     printf("\n");
 
     m_del(a);
@@ -51,12 +55,12 @@ int main() {
     free(c);
 
     /***** SOAL 2 *****/
-    size = 9;
-    a = m_init(size, size);
-    b = (double *) malloc(size * sizeof(double));
-    c = (double *) malloc(size * sizeof(double));
+    n = 9;
+    a = m_init(n, n);
+    b = (double *) malloc(n * sizeof(double));
+    c = (double *) malloc(n * sizeof(double));
 
-    for (i = 0; i < size; i++) {
+    for (i = 0; i < n; i++) {
         c[i] = 0.f;
     }
 
@@ -79,38 +83,27 @@ int main() {
     a->data[7][4] = -0.5;
     a->data[4][6] = -1;
     a->data[8][8] = 0.7071;
-    b[0] = 0;
     b[1] = -1000;
-    b[2] = 0;
-    b[3] = 0;
     b[4] = 500;
-    b[5] = 0;
-    b[6] = 0;
     b[7] = -500;
-    b[8] = 0;
 
     printf("\nsoal 2\n");
     m_print(a);
-    printf("gauss naive: ");
+    printf("gauss naive:\n ");
     gaussnaive(a, b, c);
-    for (i = 0; i < size; i++) {
-        printf("%.5f ", c[i]);
-        c[i] = 0.f;
-    }
+    reset(c, n);
     printf("\n");
-    printf("gauss jordan: ");
+    printf("gauss jordan:\n ");
     gaussjordan(a, b, c);
-    for (i = 0; i < size; i++) {
-        printf("%.5f ", c[i]);
-        c[i] = 0.f;
-    }
+    reset(c, n);
     printf("\n");
-    printf("LU decomposition: ");
-    ludecomp(a, b, c);
-    for (i = 0; i < size; i++) {
-        printf("%.5f ", c[i]);
-        c[i] = 0.f;
-    }
+    printf("doolittle decomposition:\n ");
+    doolittle(a, b, c);
+    reset(c, n);
+    printf("\n");
+    printf("crout decomposition:\n ");
+    crout(a, b, c);
+    reset(c, n);
     printf("\n");
 
     m_del(a);
@@ -118,12 +111,12 @@ int main() {
     free(c);
 
     /**SOAL 3**/
-    size = 6;
-    a = m_init(size, size);
-    b = (double *) malloc(size * sizeof(double));
-    c = (double *) malloc(size * sizeof(double));
+    n = 6;
+    a = m_init(n, n);
+    b = (double *) malloc(n * sizeof(double));
+    c = (double *) malloc(n * sizeof(double));
 
-    for (i = 0; i < size; i++) {
+    for (i = 0; i < n; i++) {
         b[i] = 1.f;
         c[i] = 0.f;
     }
@@ -131,14 +124,13 @@ int main() {
     printf("\n soal 3\n");
     m_hilbert(a);
     m_print(a);
-    ludecomp(a, b, c);
-    //m_print(a);
-    printf("LU decomposition: ");
-    ludecomp(a, b, c);
-    for (i = 0; i < size; i++) {
-        printf("%.5f ", c[i]);
-        c[i] = 0.f;
-    }
+    printf("doolittle decomposition:\n ");
+    doolittle(a, b, c);
+    reset(c, n);
+    printf("\n");
+    printf("crout decomposition:\n ");
+    crout(a, b, c);
+    reset(c, n);
     printf("\n");
 
     m_del(a);
@@ -146,31 +138,35 @@ int main() {
     free(c);
 
     /** SOAL 4 (TERAPAN) **/
-    size = 6;
-    a = m_init(size, size);
-    b = (double *) malloc(size * sizeof(double));
-    c = (double *) malloc(size * sizeof(double));
+    n = 6;
+    a = m_init(n, n);
+    b = (double *) malloc(n * sizeof(double));
+    c = (double *) malloc(n * sizeof(double));
 
-    for (i = 0; i < size; i++) {
+    for (i = 0; i < n; i++) {
         c[i] = 0.f;
     }
 
-    a->data[0][0] = 0.866; a->data[0][1] = 0; a->data[0][2] = -0.5; a->data[0][3] = 0; a->data[0][4] = 0; a->data[0][5] = 0; a->data[1][0] = 0.5; a->data[1][1] = 0; a->data[1][2] = 0.866; a->data[1][3] = 0; a->data[1][4] = 0; a->data[1][5] = 0; a->data[2][0] = -0.866; a->data[2][1] = -1; a->data[2][2] = 0; a->data[2][3] = -1; a->data[2][4] = 0; a->data[2][5] = 0; a->data[3][0] = -0.5; a->data[3][1] = 0; a->data[3][2] = 0; a->data[3][3] = 0; a->data[3][4] = -1; a->data[3][5] = 0; a->data[4][0] = 0; a->data[4][1] = 1; a->data[4][2] = 0.5; a->data[4][3] = 0; a->data[4][4] = 0; a->data[4][5] = 0; a->data[5][0] = 0; a->data[5][1] = 0; a->data[5][2] = -0.866; a->data[5][3] = 0; a->data[5][4] = 0; a->data[5][5] = -1; 
-    b[0] = 0;
+    a->data[0][0] = 0.866;
+    a->data[0][2] = -0.5;
+    a->data[1][0] = 0.5;
+    a->data[1][2] = 0.866;
+    a->data[2][0] = -0.866;
+    a->data[2][1] = -1;
+    a->data[2][3] = -1;
+    a->data[3][0] = -0.5;
+    a->data[3][4] = -1;
+    a->data[4][1] = 1;
+    a->data[4][2] = 0.5;
+    a->data[5][2] = -0.866;
+    a->data[5][5] = -1;
     b[1] = -1000;
-    b[2] = 0;
-    b[3] = 0;
-    b[4] = 0;
-    b[5] = 0;
 
     printf("\nsoal terapan\n");
     m_print(a);
-    printf("LU decomposition: ");
-    ludecomp(a, b, c);
-    for (i = 0; i < size; i++) {
-        printf("%.5f ", c[i]);
-        c[i] = 0.f;
-    }
+    printf("crout decomposition:\n ");
+    crout(a, b, c);
+    reset(c, n);
     printf("\n");
 
     m_del(a);

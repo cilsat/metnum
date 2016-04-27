@@ -36,7 +36,7 @@ void pivot(matrix *m, long cur_row) {
     }
 }
 
-void gaussjordan(matrix *a, double *b, double* results) {
+void gaussjordan(matrix *a, double *b, double* c) {
     long i, j, k;
 
     // combine left and right sides
@@ -70,12 +70,12 @@ void gaussjordan(matrix *a, double *b, double* results) {
 
     // solve
     for (i = 0; i < m->rows; i++) {
-        results[i] = m->data[i][m->cols-1];
+        c[i] = m->data[i][m->cols-1];
     }
     m_del(m);
 }
 
-void gaussnaive(matrix *a, double *b, double *results) {
+void gaussnaive(matrix *a, double *b, double *c) {
     long i, j, k;
 
     // combine left and right sides
@@ -104,22 +104,22 @@ void gaussnaive(matrix *a, double *b, double *results) {
     for (i = m->rows-1; i >=0; i--) {
         double sum = m->data[i][m->cols-1];
         for (j = i; j < m->cols-1; j++) {
-            sum -= m->data[i][j]*results[j];
+            sum -= m->data[i][j]*c[j];
         }
-        results[i] = sum/m->data[i][i];
+        c[i] = sum/m->data[i][i];
     }
     // free matrix
     m_del(m);
 }
 
-void ludecomp(matrix *a, double *b, double *results) {
+void doolittle(matrix *a, double *b, double *c) {
     long i, j, k;
-    long size = a->rows;
+    long n = a->rows;
 
     matrix *u = m_init(a->rows, a->cols);
     memcpy(u, a, sizeof(*a));
     matrix *l = m_init(a->rows, a->cols);
-    for (i = 0; i < size; i++) {
+    for (i = 0; i < n; i++) {
         for (j = 0; j < l->cols; j++) {
             if (i == j)
                 l->data[i][j] = 1.f;
@@ -139,14 +139,16 @@ void ludecomp(matrix *a, double *b, double *results) {
             }
         }
     }
+    m_print(l);
+    m_print(u);
 
     // forward substitution
-    double *d = (double *) malloc(size*sizeof(double));
-    for (i = 0; i < size; i++) {
+    double *d = (double *) malloc(n*sizeof(double));
+    for (i = 0; i < n; i++) {
         d[i] = 0.f;
     }
 
-    for (i = 0; i < size; i++) {
+    for (i = 0; i < n; i++) {
         double sum = b[i];
         for (j = 0; j <= i; j++) {
             sum -= l->data[i][j] * d[j];
@@ -155,15 +157,82 @@ void ludecomp(matrix *a, double *b, double *results) {
     }
 
     // back substitution
-    for (i = size-1; i >=0; i--) {
+    for (i = n-1; i >=0; i--) {
         double sum = d[i];
-        for (j = i; j < size; j++) {
-            sum -= u->data[i][j] * results[j];
+        for (j = i; j < n; j++) {
+            sum -= u->data[i][j] * c[j];
         }
-        results[i] = sum/u->data[i][i];
+        c[i] = sum/u->data[i][i];
     }
     free(d);
     m_del(l);
+}
+
+void crout(matrix *a, double *b, double *c) {
+    long i, j, k;
+    long n = a->rows;
+    double sum;
+
+    matrix *l = m_init(n, n);
+    matrix *u = m_init(n, n);
+
+    for (i = 0; i < n; i++) {
+        l->data[i][0] = a->data[i][1];
+        u->data[i][i] = 1.f;
+    }
+    for (i = 1; i < n; i++) {
+        u->data[0][i] = a->data[0][i]/l->data[0][0];
+    }
+
+    for (i = 0; i < n; i++) {
+        for (j = i; j < n; j++) {
+            sum = 0;
+            for (k = 0; k < i; k++) {
+                sum += l->data[j][k] * u->data[k][i];
+            }
+            l->data[j][i] = a->data[j][i] - sum;
+        }
+
+        for (j = i; j < n; j++) {
+            sum = 0;
+            for (k = 0; k < i; k++) {
+                sum += l->data[i][k] * u->data[k][j];
+            }
+            if (l->data[i][i] == 0) {
+                printf("det terlalu dekat dengan nol!\n");
+                //exit(EXIT_FAILURE);
+            }
+            u->data[i][j] = (a->data[i][j] - sum)/l->data[i][i];
+        }
+    }
+    m_print(l);
+    m_print(u);
+
+    // forward substitution
+    double *d = (double *) malloc(n*sizeof(double));
+    for (i = 0; i < n; i++) {
+        d[i] = 0.f;
+    }
+
+    for (i = 0; i < n; i++) {
+        sum = b[i];
+        for (j = 0; j <= i; j++) {
+            sum -= l->data[i][j] * d[j];
+        }
+        d[i] = sum/l->data[i][i];
+    }
+
+    // back substitution
+    for (i = n-1; i >=0; i--) {
+        sum = d[i];
+        for (j = i; j < n; j++) {
+            sum -= u->data[i][j] * c[j];
+        }
+        c[i] = sum/u->data[i][i];
+    }
+    m_del(l);
+    m_del(u);
+    free(d);
 }
 
 double f1a(double x) {
@@ -177,7 +246,7 @@ double f1b(double x) {
 }
 
 double f1c(double x) {
-	double fx = 0.5*exp(x/3) - sin(x);
+    double fx = 0.5*exp(x/3) - sin(x);
     return fx;
 }
 
@@ -188,8 +257,8 @@ double f2(double x) {
 
 double df2(double x) {
     double dfx;
-	dfx = 160*exp(-2*x) + 2*exp(-0.1*x);
-	return(dfx);
+    dfx = 160*exp(-2*x) + 2*exp(-0.1*x);
+    return(dfx);
 }
 
 double f3(double x) {
@@ -202,12 +271,12 @@ double df3(double x) {
     return dfx;
 }
 
-double bisection(nirlanjar f, double xmin, double xmax) {
+double bisection(function f, double xmin, double xmax) {
     double xmid, xmid_prev, fxmin, fxmax, test, root;
     double ea = INF;
     double es = MAX_ERR;
     long iter = 0;
-    
+
     fxmin = f(xmin);
     fxmax = f(xmax);
     xmid = xmin;
@@ -216,23 +285,23 @@ double bisection(nirlanjar f, double xmin, double xmax) {
         printf("rentang tidak valid ");
         return 0;
     }
-    
+
     while (ea > es && iter < MAX_ITER) {
         xmid_prev = xmid;
         xmid = 0.5*(xmin + xmax);
         ea = fabs((xmid - xmid_prev)/xmid)*100;
         iter++;
         test = f(xmid)*f(xmin);
-        if (test < 0) 
+        if (test < 0)
             xmax = xmid;
         else
             xmin = xmid;
-	}
+    }
     root = xmid;
     return root;
 }
 
-double falsepos(nirlanjar f, double xmin, double xmax) {
+double falsepos(function f, double xmin, double xmax) {
     double xl, xu, xr, fxmin, fxmax;
     xl = xmin;
     xu = xmax;
@@ -258,7 +327,7 @@ double falsepos(nirlanjar f, double xmin, double xmax) {
     return xr;
 }
 
-double secant(nirlanjar f, double x1, double x2) {
+double secant(function f, double x1, double x2) {
     double x3, fx1, fx2, er, eps;
     int iter = 0;
 
@@ -281,7 +350,7 @@ double secant(nirlanjar f, double x1, double x2) {
     return x3;
 }
 
-double newton(nirlanjar f, nirlanjar df, double x) {
+double newton(function f, function df, double x) {
     double xr, xn, ea;
     ea = INF;
     xr = x;
@@ -297,3 +366,4 @@ double newton(nirlanjar f, nirlanjar df, double x) {
     }
     return xn;
 }
+

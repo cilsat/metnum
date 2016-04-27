@@ -48,40 +48,6 @@ void m_print(matrix *m) {
     printf("\n");
 }
 
-void m_div(matrix *m, double operand) {
-    for (long i = 0; i < m->rows; i++) {
-        for (long j = 0; j < m->cols; j++) {
-            m->data[i][j] /= operand;
-        }
-    }
-}
-
-matrix *m_mul(matrix *m, double operand) {
-    matrix *temp = m_init(m->rows, m->cols);
-    for (long i = 0; i < m->rows; i++) {
-        for (long j = 0; j < m->cols; j++) {
-            temp->data[i][j] = m->data[i][j] * operand;
-        }
-    }
-    return temp;
-}
-
-void m_add(matrix *m, double operand) {
-    for (long i = 0; i < m->rows; i++) {
-        for (long j = 0; j < m->cols; j++) {
-            m->data[i][j] += operand;
-        }
-    }
-}
-
-void m_sub(matrix *m, double operand) {
-    for (long i = 0; i < m->rows; i++) {
-        for (long j = 0; j < m->cols; j++) {
-            m->data[i][j] -= operand;
-        }
-    }
-}
-
 matrix *m_slice(matrix *m, long r_start, long r_stop, long c_start, long c_stop) {
     matrix *temp = m_init(r_stop-r_start, c_stop-c_start);
     for (long i = r_start; i < r_stop; i++) {
@@ -112,11 +78,7 @@ void m_hilbert(matrix *m) {
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
-            if ((i + j) != 0) {
-                m->data[i][j] = 1.f/(i + j);
-            } else {
-                m->data[i][j] = 1.f;
-            }
+            m->data[i][j] = 1.f/(i + j + 1);
         }
     }
 }
