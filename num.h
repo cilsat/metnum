@@ -7,7 +7,8 @@ void pivot(matrix *m, long cur_row);
 void gaussjordan(matrix *a, double *b, double *results);
 void gaussnaive(matrix *a, double *b, double *results);
 void doolittle(matrix *a, double *b, double *results);
-void crout(matrix *a, double *b, double *results);
+void crout(matrix *a, double *b, double *results); //TODO
+void jacobi(matrix *a, double *b, double *results, double init_val); //TODO
 
 typedef double (*function)(double x);
 double f1a(double);

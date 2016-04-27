@@ -26,7 +26,7 @@ void m_rand(matrix *m) {
 
     for (i = 0; i < m->rows; i++) {
         for (j = 0; j < m->cols; j++) {
-            m->data[i][j] = MAX_double*((double) rand() / (double) RAND_MAX);
+            m->data[i][j] = MAX_VAL*((double) rand() / (double) RAND_MAX);
         }
     }
 }

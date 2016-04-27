@@ -328,22 +328,18 @@ double falsepos(function f, double xmin, double xmax) {
 }
 
 double secant(function f, double x1, double x2) {
-    double x3, fx1, fx2, er, eps;
+    double x3, er, eps;
     int iter = 0;
 
-    fx1 = f(x1);
-    fx2 = f(x2);
-    x3 = x2 - fx2*(x1 - x2)/(fx1 - fx2);
-
+    x3 = x2 - f(x2)*(x1 - x2)/(f(x1) - f(x2));
     er = fabs(x3 - x2);
     eps = 2*er/(fabs(x3) + MAX_ERR);
-    while ((er > MAX_ERR) | (eps > MAX_ERR) && (iter < MAX_ITER)) {
+
+    while (((er > MAX_ERR) | (eps > MAX_ERR)) && (iter < MAX_ITER)) {
         iter++;
         x1 = x2;
         x2 = x3;
-        fx1 = f(x1);
-        fx2 = f(x2);
-        x3 = x2 - fx2*(x1 - x2)/(fx1 - fx2);
+        x3 = x2 - f(x2)*(x1 - x2)/(f(x1) - f(x2));
         er = fabs(x3 - x2);
         eps = 2*er/(fabs(x3) + MAX_ERR);
     }

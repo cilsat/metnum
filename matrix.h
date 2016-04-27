@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_double 100
+#define MAX_VAL 100
 
 typedef struct {
     long rows;
