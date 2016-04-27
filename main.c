@@ -1,7 +1,7 @@
 #include "num.h"
 #include <omp.h>
 
-#define MAX_FLOAT 100
+#define MAX_double 100
 #define DEBUG 2
 
 int main(int argc, char *argv[]) {
@@ -11,20 +11,20 @@ int main(int argc, char *argv[]) {
 
     /*
     matrix *a = m_init(size, size);
-    float *b = (float *) malloc(size*sizeof(float));
-    float *sol = (float *) malloc(a->rows * sizeof(float));
+    double *b = (double *) malloc(size*sizeof(double));
+    double *sol = (double *) malloc(a->rows * sizeof(double));
 
     m_rand(a);
     srand(time(NULL));
     for (i = 0; i < size; i++) {
-        b[i] = MAX_FLOAT*((float) rand() / (float) RAND_MAX);
+        b[i] = MAX_double*((double) rand() / (double) RAND_MAX);
         sol[i] = 0.f;
     }
     */
 
     matrix *a = m_init(3, 3);
-    float *b = (float *) malloc(3*sizeof(float));
-    float *sol = (float *) malloc(a->rows * sizeof(float));
+    double *b = (double *) malloc(3*sizeof(double));
+    double *sol = (double *) malloc(a->rows * sizeof(double));
     for (i = 0; i < 3; i++) {
         sol[i] = 0.f;
     }

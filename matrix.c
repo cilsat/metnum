@@ -7,8 +7,8 @@ matrix *m_init(long rows, long cols) {
     m->cols = cols;
     m->size = rows*cols;
 
-    float **m_temp = (float **)malloc(rows*sizeof(float *));
-    float *data = (float *)malloc(rows*cols*sizeof(float));
+    double **m_temp = (double **)malloc(rows*sizeof(double *));
+    double *data = (double *)malloc(rows*cols*sizeof(double));
     for (long i = 0; i < rows; i++)
         m_temp[i] = &(data[cols*i]);
 
@@ -23,7 +23,7 @@ void m_rand(matrix *m) {
 
     for (i = 0; i < m->rows; i++) {
         for (j = 0; j < m->cols; j++) {
-            m->data[i][j] = MAX_FLOAT*((float) rand() / (float) RAND_MAX);
+            m->data[i][j] = MAX_double*((double) rand() / (double) RAND_MAX);
         }
     }
 }
@@ -45,7 +45,7 @@ void m_print(matrix *m) {
     printf("\n");
 }
 
-void m_div(matrix *m, float operand) {
+void m_div(matrix *m, double operand) {
     for (long i = 0; i < m->rows; i++) {
         for (long j = 0; j < m->cols; j++) {
             m->data[i][j] /= operand;
@@ -53,7 +53,7 @@ void m_div(matrix *m, float operand) {
     }
 }
 
-matrix *m_mul(matrix *m, float operand) {
+matrix *m_mul(matrix *m, double operand) {
     matrix *temp = m_init(m->rows, m->cols);
     for (long i = 0; i < m->rows; i++) {
         for (long j = 0; j < m->cols; j++) {
@@ -63,7 +63,7 @@ matrix *m_mul(matrix *m, float operand) {
     return temp;
 }
 
-void m_add(matrix *m, float operand) {
+void m_add(matrix *m, double operand) {
     for (long i = 0; i < m->rows; i++) {
         for (long j = 0; j < m->cols; j++) {
             m->data[i][j] += operand;
@@ -71,7 +71,7 @@ void m_add(matrix *m, float operand) {
     }
 }
 
-void m_sub(matrix *m, float operand) {
+void m_sub(matrix *m, double operand) {
     for (long i = 0; i < m->rows; i++) {
         for (long j = 0; j < m->cols; j++) {
             m->data[i][j] -= operand;
