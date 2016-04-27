@@ -9,9 +9,12 @@ matrix *m_init(long rows, long cols) {
 
     double **m_temp = (double **)malloc(rows*sizeof(double *));
     double *data = (double *)malloc(rows*cols*sizeof(double));
-    for (long i = 0; i < rows; i++)
+    for (long i = 0; i < rows; i++) {
         m_temp[i] = &(data[cols*i]);
-
+        for (long j = 0; j < cols; j++) {
+            m_temp[i][j] = 0.f;
+        }
+    }
     m->data = m_temp;
 
     return m;
@@ -99,6 +102,21 @@ void m_dot(matrix *a, matrix *b, matrix *c) {
     for (i = 0; i < c->rows; i++) {
         for (j = 0; j < c->cols; j++) {
             c->data[i][j] += a->data[i][j]*b->data[j][i];
+        }
+    }
+}
+
+void m_hilbert(matrix *m) {
+    long n = m->rows;
+    long i, j;
+
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++) {
+            if ((i + j) != 0) {
+                m->data[i][j] = 1.f/(i + j);
+            } else {
+                m->data[i][j] = 1.f;
+            }
         }
     }
 }

@@ -24,5 +24,6 @@ void m_add(matrix *, double);
 void m_sub(matrix *, double);
 matrix *m_slic(matrix *, long, long, long, long);
 void m_dot(matrix *, matrix *, matrix *);
+void m_hilbert(matrix *);
 
 #endif

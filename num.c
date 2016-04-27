@@ -2,9 +2,39 @@
 #include <string.h>
 #include <math.h>
 
-#define INF 99999.9
-#define MAX_ITER 1000
+#define INF 99999
+#define MAX_ITER 10000
 #define MAX_ERR 0.0001
+
+void pivot(matrix *m, long cur_row) {
+    long i = cur_row;
+    long j;
+    //matrix *m = m_init(a->rows, a->cols);
+    //memcpy(m, a, sizeof(*a));
+
+    double p = m->data[i][i];
+    if (p == 0) {
+        long new_row = -1;
+        for (j = i+1; j < m->rows; j++) {
+            if (m->data[j][i]*m->data[i][j] != 0) {
+                new_row = j;
+                break;
+            }
+        }
+        if (new_row == -1) {
+            printf("matriks tidak memiliki solusi atau ill-behaved\n");
+        } else {
+            //printf("nr %ld\n", new_row);
+            double *temp = (double *) malloc(m->cols * sizeof(double));
+            for (j = 0; j < m->cols; j++) {
+                temp[j] = m->data[new_row][j];
+                m->data[new_row][j] = m->data[i][j];
+                m->data[i][j] = temp[j];
+            }
+            free(temp);
+        }
+    }
+}
 
 void gaussjordan(matrix *a, double *b, double* results) {
     long i, j, k;
@@ -19,6 +49,8 @@ void gaussjordan(matrix *a, double *b, double* results) {
     }
 
     for (i = 0; i < m->rows; i++) {
+        // pivot
+        pivot(m, i);
         // normalize row
         double pivot = m->data[i][i];
         for (k = 0; k < m->cols; k++) {
@@ -57,6 +89,8 @@ void gaussnaive(matrix *a, double *b, double *results) {
 
     // forward elimination
     for (i = 0; i < m->rows; i++) {
+        // pivot
+        pivot(m, i);
         // subtract row from all subsequent rows
         for (j = i+1; j < m->rows; j++) {
             double n_pivot = m->data[j][i]/m->data[i][i];
@@ -120,7 +154,6 @@ void ludecomp(matrix *a, double *b, double *results) {
         d[i] = sum/l->data[i][i];
     }
 
-    m_print(u);
     // back substitution
     for (i = size-1; i >=0; i--) {
         double sum = d[i];
@@ -129,10 +162,6 @@ void ludecomp(matrix *a, double *b, double *results) {
         }
         results[i] = sum/u->data[i][i];
     }
-    for (i = 0; i < size; i++) {
-        printf("%.6f ", results[i]);
-    }
-
     free(d);
     m_del(l);
 }
@@ -164,8 +193,13 @@ double df2(double x) {
 }
 
 double f3(double x) {
-    double gx = (70 + 1.463/pow(x,2))*(x-0.0394) - 0.08314*215;
-    return gx;
+    double dx = (70 + 1.463/pow(x,2))*(x-0.0394) - 0.08314*215;
+    return dx;
+}
+
+double df3(double x) {
+    double dfx = 70 - (1.463/pow(x,2)) + (0.115284/pow(x,3));
+    return dfx;
 }
 
 double bisection(nirlanjar f, double xmin, double xmax) {
@@ -179,7 +213,7 @@ double bisection(nirlanjar f, double xmin, double xmax) {
     xmid = xmin;
 
     if (fxmin*fxmax > 0) {
-        printf("rentang tidak valid\n");
+        printf("rentang tidak valid ");
         return 0;
     }
     
@@ -208,7 +242,7 @@ double falsepos(nirlanjar f, double xmin, double xmax) {
     fxmax = f(xu);
 
     if (fxmin*fxmax > 0) {
-        printf("rentang tidak valid\n");
+        printf("rentang tidak valid ");
         return 0;
     }
 
