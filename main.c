@@ -1,32 +1,28 @@
 #include "num.h"
-#include <omp.h>
 
 #define MAX_double 100
 #define DEBUG 2
+#define PREC "%.3f "
+
+void reset(double *arr, long n) {
+    for (long i = 0; i < n; i++) {
+        printf(PREC, arr[i]);
+        arr[i] = 0.f;
+    }
+}
 
 int main(int argc, char *argv[]) {
-    //long size = (long) strtol(argv[1], NULL, 10);
-    long i;
-    double dstart, dstop;
+    long i, n;
+    matrix *a;
+    double *b, *c;
 
     /*
-    matrix *a = m_init(size, size);
-    double *b = (double *) malloc(size*sizeof(double));
-    double *sol = (double *) malloc(a->rows * sizeof(double));
-
-    m_rand(a);
-    srand(time(NULL));
-    for (i = 0; i < size; i++) {
-        b[i] = MAX_double*((double) rand() / (double) RAND_MAX);
-        sol[i] = 0.f;
-    }
-    */
-
-    matrix *a = m_init(3, 3);
-    double *b = (double *) malloc(3*sizeof(double));
-    double *sol = (double *) malloc(a->rows * sizeof(double));
-    for (i = 0; i < 3; i++) {
-        sol[i] = 0.f;
+    n = 3;
+    a = m_init(n, n);
+    b = (double *) malloc(n*sizeof(double));
+    c = (double *) malloc(n*sizeof(double));
+    for (i = 0; i < n; i++) {
+        c[i] = 0.f;
     }
 
     a->data[0][0] = 3.0;
@@ -43,45 +39,46 @@ int main(int argc, char *argv[]) {
     b[1] = -19.3;
     b[2] = 71.4;
 
-    dstart = omp_get_wtime();
-    gaussnaive(a, b, sol);
-    dstop = omp_get_wtime();
+    printf("initial matrix:\n");
+    m_print(a);
 
-    if (DEBUG == 2) {
-        printf("%.5f\n", dstop-dstart);
-    }
+    printf("\ncrout\n");
+    crout(a, b, c);
+    reset(c, n);
 
-    if (DEBUG == 1) {
-        m_print(a);
-        for (i = 0; i < a->rows; i++) {
-            printf("%f ", sol[i]);
-        }
-    }
-    for (i = 0; i < 3; i++) {
-        sol[i] = 0.f;
-    }
-
-    dstart = omp_get_wtime();
-    gaussjordan(a, b, sol);
-    dstop = omp_get_wtime();
-
-    if (DEBUG == 2) {
-        printf("%.5f\n", dstop-dstart);
-    }
-    for (i = 0; i < 3; i++) {
-        sol[i] = 0.f;
-    }
-
-    dstart = omp_get_wtime();
-    ludecomp(a, b, sol);
-    dstop = omp_get_wtime();
-
-    if (DEBUG == 2) {
-        printf("%.5f\n", dstop-dstart);
-    }
+    printf("\ndoolittle\n");
+    doolittle(a, b, c);
+    reset(c, n);
 
     m_del(a);
     free(b);
-    free(sol);
+    free(c);
+    */
+
+    n = strtol(argv[1], NULL, 10);
+    a = m_init(n, n);
+    b = (double *)malloc(n*sizeof(double));
+    c = (double *)malloc(n*sizeof(double));
+    for (i = 0; i < n; i++) {
+        b[i] = 1.f;
+        c[i] = 0.f;
+    }
+
+    printf("hilbert matrix size %ld:\n", n);
+    m_hilbert(a);
+    m_print(a);
+
+    printf("\ncrout\n");
+    crout(a, b, c);
+    reset(c, n);
+
+    printf("\ndoolittle\n");
+    doolittle(a, b, c);
+    reset(c, n);
+
+    m_del(a);
+    free(b);
+    free(c);
+
     return 0;
 }

@@ -17,6 +17,7 @@ typedef struct {
 matrix *m_init(long, long);
 void m_rand(matrix *);
 void m_del(matrix *);
+void m_cpy(matrix *dest, matrix *src);
 void m_print(matrix *);
 void m_div(matrix *, double);
 matrix *m_mul(matrix *, double);

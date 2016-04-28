@@ -1,7 +1,7 @@
 #include "num.h"
 #include <stdio.h>
 
-#define PREC "%.5f "
+#define PREC "%.3f "
 
 void reset(double *arr, long n) {
     for (long i = 0; i < n; i++) {
@@ -41,12 +41,12 @@ int main() {
     gaussjordan(a, b, c);
     reset(c, n);
     printf("\n");
-    printf("doolittle decomposition:\n ");
-    doolittle(a, b, c);
-    reset(c, n);
-    printf("\n");
     printf("crout decomposition:\n ");
     crout(a, b, c);
+    reset(c, n);
+    printf("\n");
+    printf("doolittle decomposition:\n ");
+    doolittle(a, b, c);
     reset(c, n);
     printf("\n");
 
@@ -121,9 +121,17 @@ int main() {
         c[i] = 0.f;
     }
 
-    printf("\n soal 3\n");
+    printf("\nsoal 3\n");
     m_hilbert(a);
     m_print(a);
+    printf("gauss naive:\n ");
+    gaussnaive(a, b, c);
+    reset(c, n);
+    printf("\n");
+    printf("gauss jordan:\n ");
+    gaussjordan(a, b, c);
+    reset(c, n);
+    printf("\n");
     printf("doolittle decomposition:\n ");
     doolittle(a, b, c);
     reset(c, n);
@@ -164,6 +172,10 @@ int main() {
 
     printf("\nsoal terapan\n");
     m_print(a);
+    printf("doolittle decomposition:\n ");
+    doolittle(a, b, c);
+    reset(c, n);
+    printf("\n");
     printf("crout decomposition:\n ");
     crout(a, b, c);
     reset(c, n);

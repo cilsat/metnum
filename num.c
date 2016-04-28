@@ -3,17 +3,17 @@
 #include <math.h>
 
 #define INF 99999
-#define MAX_ITER 10000
+#define MAX_ITER INF
 #define MAX_ERR 0.0001
+#define DEBUG 0
 
 void pivot(matrix *m, long cur_row) {
     long i = cur_row;
     long j;
-    //matrix *m = m_init(a->rows, a->cols);
-    //memcpy(m, a, sizeof(*a));
 
     double p = m->data[i][i];
     if (p == 0) {
+        // where do we go?
         long new_row = -1;
         for (j = i+1; j < m->rows; j++) {
             if (m->data[j][i]*m->data[i][j] != 0) {
@@ -21,6 +21,7 @@ void pivot(matrix *m, long cur_row) {
                 break;
             }
         }
+        // swap cur_row with new_row
         if (new_row == -1) {
             printf("matriks tidak memiliki solusi atau ill-behaved\n");
         } else {
@@ -116,22 +117,20 @@ void doolittle(matrix *a, double *b, double *c) {
     long i, j, k;
     long n = a->rows;
 
-    matrix *u = m_init(a->rows, a->cols);
-    memcpy(u, a, sizeof(*a));
-    matrix *l = m_init(a->rows, a->cols);
+    matrix *l = m_init(n, n);
+    matrix *u = m_init(n, n);
+    m_cpy(u, a);
+
     for (i = 0; i < n; i++) {
-        for (j = 0; j < l->cols; j++) {
-            if (i == j)
-                l->data[i][j] = 1.f;
-            else
-                l->data[i][j] = 0.f;
-        }
+        l->data[i][i] = 1.f;
     }
 
     // decomposition
-    for (i = 0; i < u->rows; i++) {
+    for (i = 0; i < n; i++) {
+        // pivot
+        pivot(u, i);
         // subtract row from all subsequent rows
-        for (j = i+1; j < u->rows; j++) {
+        for (j = i+1; j < n; j++) {
             double n_pivot = u->data[j][i]/u->data[i][i];
             l->data[j][i] = n_pivot;
             for (k = 0; k < u->cols; k++) {
@@ -139,8 +138,10 @@ void doolittle(matrix *a, double *b, double *c) {
             }
         }
     }
-    m_print(l);
-    m_print(u);
+    if (DEBUG) {
+        m_print(l);
+        m_print(u);
+    }
 
     // forward substitution
     double *d = (double *) malloc(n*sizeof(double));
@@ -166,6 +167,7 @@ void doolittle(matrix *a, double *b, double *c) {
     }
     free(d);
     m_del(l);
+    m_del(u);
 }
 
 void crout(matrix *a, double *b, double *c) {
@@ -175,38 +177,30 @@ void crout(matrix *a, double *b, double *c) {
 
     matrix *l = m_init(n, n);
     matrix *u = m_init(n, n);
+    m_cpy(u, a);
 
-    for (i = 0; i < n; i++) {
-        l->data[i][0] = a->data[i][1];
-        u->data[i][i] = 1.f;
-    }
-    for (i = 1; i < n; i++) {
-        u->data[0][i] = a->data[0][i]/l->data[0][0];
-    }
+    for (i = 0; i < n; i++)
+        l->data[i][i] = 1.f;
 
+    // decomposition
     for (i = 0; i < n; i++) {
-        for (j = i; j < n; j++) {
-            sum = 0;
-            for (k = 0; k < i; k++) {
-                sum += l->data[j][k] * u->data[k][i];
-            }
-            l->data[j][i] = a->data[j][i] - sum;
+        // pivot
+        pivot(u, i);
+        // normalize
+        double f_pivot = u->data[i][i];
+        l->data[i][i] = f_pivot;
+        for (k = i; k < n; k++) {
+            u->data[i][k] /= f_pivot;
         }
-
-        for (j = i; j < n; j++) {
-            sum = 0;
-            for (k = 0; k < i; k++) {
-                sum += l->data[i][k] * u->data[k][j];
+        // subtract for all subsequent rows
+        for (j = i+1; j < n; j++) {
+            double n_pivot = u->data[j][i];
+            l->data[j][i] = n_pivot;
+            for (k = 0; k < n; k++) {
+                u->data[j][k] -= n_pivot * u->data[i][k];
             }
-            if (l->data[i][i] == 0) {
-                printf("det terlalu dekat dengan nol!\n");
-                //exit(EXIT_FAILURE);
-            }
-            u->data[i][j] = (a->data[i][j] - sum)/l->data[i][i];
         }
     }
-    m_print(l);
-    m_print(u);
 
     // forward substitution
     double *d = (double *) malloc(n*sizeof(double));
