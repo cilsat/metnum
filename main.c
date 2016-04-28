@@ -1,12 +1,14 @@
 #include "num.h"
+#include "omp.h"
 
 #define MAX_double 100
-#define DEBUG 2
+#define DEBUG 1
 #define PREC "%.3f "
 
 void reset(double *arr, long n) {
     for (long i = 0; i < n; i++) {
-        printf(PREC, arr[i]);
+        if (DEBUG == 1) 
+            printf(PREC, arr[i]);
         arr[i] = 0.f;
     }
 }
@@ -15,6 +17,7 @@ int main(int argc, char *argv[]) {
     long i, n;
     matrix *a;
     double *b, *c;
+    double dstart, dstop;
 
     /*
     n = 3;
@@ -41,18 +44,6 @@ int main(int argc, char *argv[]) {
 
     printf("initial matrix:\n");
     m_print(a);
-
-    printf("\ncrout\n");
-    crout(a, b, c);
-    reset(c, n);
-
-    printf("\ndoolittle\n");
-    doolittle(a, b, c);
-    reset(c, n);
-
-    m_del(a);
-    free(b);
-    free(c);
     */
 
     n = strtol(argv[1], NULL, 10);
@@ -64,17 +55,38 @@ int main(int argc, char *argv[]) {
         c[i] = 0.f;
     }
 
-    printf("hilbert matrix size %ld:\n", n);
     m_hilbert(a);
-    m_print(a);
+    if (DEBUG == 1) {
+        printf("hilbert matrix size %ld:\n", n);
+        m_print(a);
+    }
 
-    printf("\ncrout\n");
-    crout(a, b, c);
-    reset(c, n);
-
-    printf("\ndoolittle\n");
+    dstart = omp_get_wtime();
     doolittle(a, b, c);
+    dstop = omp_get_wtime();
     reset(c, n);
+    if (DEBUG) {
+        printf("\ndoolittle\n");
+        printf("%.5f\n", dstop-dstart);
+    }
+
+    dstart = omp_get_wtime();
+    crout(a, b, c);
+    dstop = omp_get_wtime();
+    reset(c, n);
+    if (DEBUG) {
+        printf("\ncrout\n");
+        printf("%.5f\n", dstop-dstart);
+    }
+
+    dstart = omp_get_wtime();
+    jacobi(a, b, c);
+    dstop = omp_get_wtime();
+    reset(c, n);
+    if (DEBUG) {
+        printf("\njacobi\n");
+        printf("%.5f\n", dstop-dstart);
+    }
 
     m_del(a);
     free(b);

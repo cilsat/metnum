@@ -33,6 +33,10 @@ int main() {
 
     printf("\nsoal 1\n");
     m_print(a);
+    printf("gauss siedel:\n ");
+    jacobi(a, b, c);
+    reset(c, n);
+    printf("\n");
     printf("gauss naive:\n ");
     gaussnaive(a, b, c);
     reset(c, n);
@@ -105,6 +109,10 @@ int main() {
     crout(a, b, c);
     reset(c, n);
     printf("\n");
+    printf("gauss siedel:\n ");
+    jacobi(a, b, c);
+    reset(c, n);
+    printf("\n");
 
     m_del(a);
     free(b);
@@ -138,6 +146,10 @@ int main() {
     printf("\n");
     printf("crout decomposition:\n ");
     crout(a, b, c);
+    reset(c, n);
+    printf("\n");
+    printf("gauss siedel:\n ");
+    jacobi(a, b, c);
     reset(c, n);
     printf("\n");
 
@@ -178,6 +190,10 @@ int main() {
     printf("\n");
     printf("crout decomposition:\n ");
     crout(a, b, c);
+    reset(c, n);
+    printf("\n");
+    printf("gauss siedel:\n ");
+    jacobi(a, b, c);
     reset(c, n);
     printf("\n");
 

@@ -3,9 +3,11 @@
 #include <math.h>
 
 #define INF 99999
-#define MAX_ITER INF
+#define MAX_ITER 10
 #define MAX_ERR 0.0001
-#define DEBUG 0
+#define INIT_JACOBI 0
+#define PREC "%.5f "
+#define DEBUG 1
 
 void pivot(matrix *m, long cur_row) {
     long i = cur_row;
@@ -229,6 +231,54 @@ void crout(matrix *a, double *b, double *c) {
     free(d);
 }
 
+void jacobi(matrix *a, double *b, double *c) {
+    long i, k;
+    long n = a->rows;
+    int iter = 0;
+    double tot_err = INF;
+    double sum;
+
+    matrix *m = m_init(n, n);
+    m_cpy(m, a);
+
+    double *c_prev = (double *)malloc(n*sizeof(double));
+    memcpy(c_prev, c, sizeof(*c));
+    for (i = 0; i < n; i++) {
+        c[i] = INIT_JACOBI;
+        pivot(m, i);
+    }
+
+    while (tot_err > MAX_ERR && iter < MAX_ITER) {
+        iter++;
+        tot_err = 0;
+        for (i = 0; i < n; i++) {
+            sum = 0;
+            for (k = 0; k < n; k++) {
+                if (k != i)
+                    sum += c[k] * m->data[i][k];
+            }
+            c[i]= (b[i] - sum)/m->data[i][i];
+            tot_err += fabs((c[i] - c_prev[i])/c[i]);
+            if (DEBUG) {
+                printf(PREC, c[i]);
+                printf(PREC, c_prev[i]);
+                printf(PREC, fabs((c[i] - c_prev[i])/c[i]));
+                printf("\n");
+            }
+            c_prev[i] = c[i];
+        }
+        tot_err /= n;
+
+        if (DEBUG) {
+            printf("i=%d ", iter);
+            printf("e=%.5f\n", tot_err);
+        }
+    }
+
+    m_del(m);
+    free(c_prev);
+}
+
 double f1a(double x) {
     double fx = (x*pow(2.1 - 0.5*x, 0.5)/((1-x)*pow(1.1-0.5*x, 0.5)))-3.69;
     return fx;
@@ -356,4 +406,5 @@ double newton(function f, function df, double x) {
     }
     return xn;
 }
+
 

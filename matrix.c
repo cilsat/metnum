@@ -83,7 +83,7 @@ void m_dot(matrix *a, matrix *b, matrix *c) {
     if (a->cols != b->rows) {
         printf("these matrices cannot be multiplied!\n");
     } 
-    if (c->rows != a->rows | c->cols != b->cols) {
+    if ((c->rows != a->rows) | (c->cols != b->cols)) {
         printf("size of output matrix invalid!\n");
     }
 
