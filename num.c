@@ -17,15 +17,17 @@ void pivot(matrix *m, long cur_row) {
     if (p == 0) {
         // where do we go?
         long new_row = -1;
+        double max_row = 0;
         for (j = i+1; j < m->rows; j++) {
-            if (m->data[j][i]*m->data[i][j] != 0) {
+            double temp = fabs(m->data[j][i]);
+            if ((i != j) && (temp*m->data[i][j] != 0) && (temp >= max_row)) {
+                max_row = temp;
                 new_row = j;
-                break;
             }
         }
         // swap cur_row with new_row
         if (new_row == -1) {
-            printf("matriks tidak memiliki solusi atau ill-behaved\n");
+            printf("matriks tidak memiliki solusi\n");
         } else {
             //printf("nr %ld\n", new_row);
             double *temp = (double *) malloc(m->cols * sizeof(double));
@@ -120,8 +122,14 @@ void doolittle(matrix *a, double *b, double *c) {
     long n = a->rows;
 
     matrix *l = m_init(n, n);
-    matrix *u = m_init(n, n);
-    m_cpy(u, a);
+    matrix *u = m_init(n, n+1);
+
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++) {
+            u->data[i][j] = a->data[i][j];
+        }
+        u->data[i][n] = b[i];
+    }
 
     for (i = 0; i < n; i++) {
         l->data[i][i] = 1.f;
@@ -135,14 +143,10 @@ void doolittle(matrix *a, double *b, double *c) {
         for (j = i+1; j < n; j++) {
             double n_pivot = u->data[j][i]/u->data[i][i];
             l->data[j][i] = n_pivot;
-            for (k = 0; k < u->cols; k++) {
+            for (k = 0; k < n; k++) {
                 u->data[j][k] -= n_pivot * u->data[i][k];
             }
         }
-    }
-    if (DEBUG) {
-        m_print(l);
-        m_print(u);
     }
 
     // forward substitution
@@ -152,7 +156,7 @@ void doolittle(matrix *a, double *b, double *c) {
     }
 
     for (i = 0; i < n; i++) {
-        double sum = b[i];
+        double sum = u->data[i][n];
         for (j = 0; j <= i; j++) {
             sum -= l->data[i][j] * d[j];
         }
@@ -178,11 +182,18 @@ void crout(matrix *a, double *b, double *c) {
     double sum;
 
     matrix *l = m_init(n, n);
-    matrix *u = m_init(n, n);
-    m_cpy(u, a);
+    matrix *u = m_init(n, n+1);
 
-    for (i = 0; i < n; i++)
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++) {
+            u->data[i][j] = a->data[i][j];
+        }
+        u->data[i][n] = b[i];
+    }
+
+    for (i = 0; i < n; i++) {
         l->data[i][i] = 1.f;
+    }
 
     // decomposition
     for (i = 0; i < n; i++) {
@@ -211,7 +222,7 @@ void crout(matrix *a, double *b, double *c) {
     }
 
     for (i = 0; i < n; i++) {
-        sum = b[i];
+        sum = u->data[i][n];
         for (j = 0; j <= i; j++) {
             sum -= l->data[i][j] * d[j];
         }
@@ -239,13 +250,17 @@ void jacobi(matrix *a, double *b, double *c) {
     double sum;
 
     matrix *m = m_init(n, n);
-    m_cpy(m, a);
+    for (i = 0; i < n; i++) {
+        for (k = 0; k < n; k++) {
+            m->data[i][k] = a->data[i][k];
+        }
+        m->data[i][n] = b[i];
+    }
 
     double *c_prev = (double *)malloc(n*sizeof(double));
     memcpy(c_prev, c, sizeof(*c));
     for (i = 0; i < n; i++) {
         c[i] = INIT_JACOBI;
-        pivot(m, i);
     }
 
     while (tot_err > MAX_ERR && iter < MAX_ITER) {
@@ -257,8 +272,9 @@ void jacobi(matrix *a, double *b, double *c) {
                 if (k != i)
                     sum += c[k] * m->data[i][k];
             }
-            c[i]= (b[i] - sum)/m->data[i][i];
-            tot_err += fabs((c[i] - c_prev[i])/c[i]);
+            c[i]= (m->data[i][n] - sum)/m->data[i][i];
+            if (c[i] != 0)
+                tot_err += fabs((c[i] - c_prev[i])/c[i]);
             if (DEBUG) {
                 printf(PREC, c[i]);
                 printf(PREC, c_prev[i]);

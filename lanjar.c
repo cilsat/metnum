@@ -65,6 +65,7 @@ int main() {
     c = (double *) malloc(n * sizeof(double));
 
     for (i = 0; i < n; i++) {
+        b[i] = 0.f;
         c[i] = 0.f;
     }
 
@@ -164,6 +165,7 @@ int main() {
     c = (double *) malloc(n * sizeof(double));
 
     for (i = 0; i < n; i++) {
+        b[i] = 0.f;
         c[i] = 0.f;
     }
 
@@ -184,10 +186,6 @@ int main() {
 
     printf("\nsoal terapan\n");
     m_print(a);
-    printf("doolittle decomposition:\n ");
-    doolittle(a, b, c);
-    reset(c, n);
-    printf("\n");
     printf("crout decomposition:\n ");
     crout(a, b, c);
     reset(c, n);

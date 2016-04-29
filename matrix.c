@@ -1,6 +1,6 @@
 #include "matrix.h"
 
-#define PREC "%.3f "
+#define PREC "%.3f\t"
 
 // Initializes a matrix of specified rows and columns size. The data field
 // is a 2-d contiguous array in memory.
