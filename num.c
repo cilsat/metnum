@@ -332,53 +332,45 @@ double df3(double x) {
 }
 
 double bisection(function f, double xmin, double xmax) {
-    double xmid, xmid_prev, fxmin, fxmax, test, root;
+    double xmid, xmid_prev, test;
     double ea = INF;
-    double es = MAX_ERR;
     long iter = 0;
-
-    fxmin = f(xmin);
-    fxmax = f(xmax);
     xmid = xmin;
 
-    if (fxmin*fxmax > 0) {
+    if (f(xmin)*f(xmax) > 0) {
         printf("rentang tidak valid ");
         return 0;
     }
 
-    while (ea > es && iter < MAX_ITER) {
+    while (ea > MAX_ERR && iter < MAX_ITER) {
+        iter++;
         xmid_prev = xmid;
         xmid = 0.5*(xmin + xmax);
-        ea = fabs((xmid - xmid_prev)/xmid)*100;
-        iter++;
+        ea = fabs((xmid - xmid_prev)/xmid);
         test = f(xmid)*f(xmin);
         if (test < 0)
             xmax = xmid;
         else
             xmin = xmid;
     }
-    root = xmid;
-    return root;
+    return xmid;
 }
 
 double falsepos(function f, double xmin, double xmax) {
-    double xl, xu, xr, fxmin, fxmax;
+    double xl, xu, xr;
     xl = xmin;
     xu = xmax;
     long iter = 0;
 
-    fxmin = f(xl);
-    fxmax = f(xu);
-
-    if (fxmin*fxmax > 0) {
+    if (f(xl)*f(xu) > 0) {
         printf("rentang tidak valid ");
         return 0;
     }
 
-    xr = xu - (fxmax*(xl - xu)/(fxmin - fxmax));
+    xr = xu - (f(xu)*(xl - xu)/(f(xl) - f(xu)));
     while (fabs(xl - xu) > MAX_ERR && iter < MAX_ITER) {
         iter++;
-        if (fxmin*f(xr) < 0)
+        if (f(xl)*f(xr) < 0)
             xu = xr;
         else
             xl = xr;
@@ -416,7 +408,7 @@ double newton(function f, function df, double x) {
     while (ea > MAX_ERR && iter < MAX_ITER) {
         iter++;
         if (xn != 0)
-            ea = fabs((xn - xr)/xr)*100;
+            ea = fabs((xn - xr)/xr);
         xr = xn;
         xn = xr - f(xr)/df(xr);
     }

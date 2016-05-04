@@ -46,7 +46,7 @@ void m_cpy(matrix *dest, matrix *src) {
     dest->cols = src->cols;
     dest->size = src->size;
 
-    // copy data field 
+    // copy data field
     for (i = 0; i < src->rows; i++) {
         for (j = 0; j < src->cols; j++) {
             dest->data[i][j] = src->data[i][j];
@@ -82,7 +82,7 @@ void m_dot(matrix *a, matrix *b, matrix *c) {
 
     if (a->cols != b->rows) {
         printf("these matrices cannot be multiplied!\n");
-    } 
+    }
     if ((c->rows != a->rows) | (c->cols != b->cols)) {
         printf("size of output matrix invalid!\n");
     }
@@ -120,3 +120,4 @@ void m_hilbert(matrix *m) {
         }
     }
 }
+
