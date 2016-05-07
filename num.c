@@ -3,15 +3,17 @@
 #include <math.h>
 
 #define INF 99999
-#define MAX_ITER 10
+#define MAX_ITER 100
 #define MAX_ERR 0.0001
 #define INIT_JACOBI 0
 #define PREC "%.5f "
-#define DEBUG 1
+#define DEBUG 0
 
 void pivot(matrix *m, long cur_row) {
     long i = cur_row;
     long j;
+    double temp = 0;
+    double *d = (double *) malloc(m->cols * sizeof(double));
 
     double p = m->data[i][i];
     if (p == 0) {
@@ -19,7 +21,7 @@ void pivot(matrix *m, long cur_row) {
         long new_row = -1;
         double max_row = 0;
         for (j = i+1; j < m->rows; j++) {
-            double temp = fabs(m->data[j][i]);
+            temp = fabs(m->data[j][i]);
             if ((i != j) && (temp*m->data[i][j] != 0) && (temp >= max_row)) {
                 max_row = temp;
                 new_row = j;
@@ -30,15 +32,14 @@ void pivot(matrix *m, long cur_row) {
             printf("matriks tidak memiliki solusi\n");
         } else {
             //printf("nr %ld\n", new_row);
-            double *temp = (double *) malloc(m->cols * sizeof(double));
             for (j = 0; j < m->cols; j++) {
-                temp[j] = m->data[new_row][j];
+                d[j] = m->data[new_row][j];
                 m->data[new_row][j] = m->data[i][j];
-                m->data[i][j] = temp[j];
+                m->data[i][j] = d[j];
             }
-            free(temp);
         }
     }
+    free(d);
 }
 
 void gaussjordan(matrix *a, double *b, double* c) {
@@ -61,7 +62,6 @@ void gaussjordan(matrix *a, double *b, double* c) {
         for (k = 0; k < m->cols; k++) {
             m->data[i][k] /= pivot;
         }
-
         // subtract row from all other rows
         for (j = 0; j < m->rows; j++) {
             if (j != i) {
@@ -73,7 +73,7 @@ void gaussjordan(matrix *a, double *b, double* c) {
         }
     }
 
-    // solve
+    // forward substitution
     for (i = 0; i < m->rows; i++) {
         c[i] = m->data[i][m->cols-1];
     }
@@ -121,18 +121,17 @@ void doolittle(matrix *a, double *b, double *c) {
     long i, j, k;
     long n = a->rows;
 
+    // create and initialize lower, upper, and intermediate results  matrixes
     matrix *l = m_init(n, n);
     matrix *u = m_init(n, n+1);
-
+    double *d = (double *)malloc(n*sizeof(double));
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
             u->data[i][j] = a->data[i][j];
         }
         u->data[i][n] = b[i];
-    }
-
-    for (i = 0; i < n; i++) {
         l->data[i][i] = 1.f;
+        d[i] = 0.f;
     }
 
     // decomposition
@@ -150,11 +149,6 @@ void doolittle(matrix *a, double *b, double *c) {
     }
 
     // forward substitution
-    double *d = (double *) malloc(n*sizeof(double));
-    for (i = 0; i < n; i++) {
-        d[i] = 0.f;
-    }
-
     for (i = 0; i < n; i++) {
         double sum = u->data[i][n];
         for (j = 0; j <= i; j++) {
@@ -171,9 +165,9 @@ void doolittle(matrix *a, double *b, double *c) {
         }
         c[i] = sum/u->data[i][i];
     }
-    free(d);
     m_del(l);
     m_del(u);
+    free(d);
 }
 
 void crout(matrix *a, double *b, double *c) {
@@ -249,7 +243,7 @@ void jacobi(matrix *a, double *b, double *c) {
     double tot_err = INF;
     double sum;
 
-    matrix *m = m_init(n, n);
+    matrix *m = m_init(n, n+1);
     for (i = 0; i < n; i++) {
         for (k = 0; k < n; k++) {
             m->data[i][k] = a->data[i][k];
@@ -258,9 +252,9 @@ void jacobi(matrix *a, double *b, double *c) {
     }
 
     double *c_prev = (double *)malloc(n*sizeof(double));
-    memcpy(c_prev, c, sizeof(*c));
     for (i = 0; i < n; i++) {
         c[i] = INIT_JACOBI;
+        c_prev[i] = INIT_JACOBI;
     }
 
     while (tot_err > MAX_ERR && iter < MAX_ITER) {
@@ -275,20 +269,9 @@ void jacobi(matrix *a, double *b, double *c) {
             c[i]= (m->data[i][n] - sum)/m->data[i][i];
             if (c[i] != 0)
                 tot_err += fabs((c[i] - c_prev[i])/c[i]);
-            if (DEBUG) {
-                printf(PREC, c[i]);
-                printf(PREC, c_prev[i]);
-                printf(PREC, fabs((c[i] - c_prev[i])/c[i]));
-                printf("\n");
-            }
             c_prev[i] = c[i];
         }
         tot_err /= n;
-
-        if (DEBUG) {
-            printf("i=%d ", iter);
-            printf("e=%.5f\n", tot_err);
-        }
     }
 
     m_del(m);
@@ -414,5 +397,3 @@ double newton(function f, function df, double x) {
     }
     return xn;
 }
-
-

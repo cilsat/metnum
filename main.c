@@ -2,12 +2,12 @@
 #include "omp.h"
 
 #define MAX_double 100
-#define DEBUG 1
+#define DEBUG 2
 #define PREC "%.3f "
 
 void reset(double *arr, long n) {
     for (long i = 0; i < n; i++) {
-        if (DEBUG == 1) 
+        if (DEBUG == 1)
             printf(PREC, arr[i]);
         arr[i] = 0.f;
     }
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     doolittle(a, b, c);
     dstop = omp_get_wtime();
     reset(c, n);
-    if (DEBUG) {
+    if (DEBUG == 2) {
         printf("\ndoolittle\n");
         printf("%.5f\n", dstop-dstart);
     }
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     crout(a, b, c);
     dstop = omp_get_wtime();
     reset(c, n);
-    if (DEBUG) {
+    if (DEBUG == 2) {
         printf("\ncrout\n");
         printf("%.5f\n", dstop-dstart);
     }
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     jacobi(a, b, c);
     dstop = omp_get_wtime();
     reset(c, n);
-    if (DEBUG) {
+    if (DEBUG == 2) {
         printf("\njacobi\n");
         printf("%.5f\n", dstop-dstart);
     }
@@ -94,3 +94,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+

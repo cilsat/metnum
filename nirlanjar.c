@@ -24,10 +24,16 @@ int main() {
     /**** SOAL 2 ****/
     printf("\nsoal 2\n");
     printf("newton raphson: %.5f\n", newton(f2, df2, 0.01));
+    printf("bisection: %.5f\n", bisection(f2, 0.001, 100));
+    printf("secant: %.5f\n", secant(f2, 0.001, 100));
+    printf("false position: %.5f\n", falsepos(f2, 0.001, 100));
 
     /**** SOAL 3 ****/
     printf("\nsoal 3\n");
     printf("newton raphson: %.5f\n", newton(f3, df3, 0.01));
+    printf("bisection: %.5f\n", bisection(f3, 0.001, 100));
+    printf("secant: %.5f\n", secant(f3, 0.001, 100));
+    printf("false position: %.5f\n", falsepos(f3, 0.001, 100));
 
     return 0;
 }
