@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
-    doolittle<<< GRID_SIZE, n >>>(dA, db, dc, n);
+    crout<<< GRID_SIZE, n >>>(dA, db, dc, n);
 
     cudaMemcpy(hA, dA, msize, cudaMemcpyDeviceToHost);
     cudaMemcpy(hb, db, vsize, cudaMemcpyDeviceToHost);
