@@ -1,4 +1,3 @@
-#include "num.h"
 #include <string.h>
 #include <math.h>
 
@@ -6,250 +5,278 @@
 #define MAX_ITER 100
 #define MAX_ERR 0.0001
 #define INIT_JACOBI 0
-#define PREC "%.5f "
-#define DEBUG 0
+#define DEBUG 1
 
-void pivot(matrix *m, long cur_row) {
+__device__ void pivot(double *m, long m_rows, long m_cols, long cur_row) {
     long i = cur_row;
     long j;
     double temp = 0;
-    double *d = (double *) malloc(m->cols * sizeof(double));
+    double *d;
 
-    double p = m->data[i][i];
+    d = (double *) malloc(m_cols*sizeof(double));
+
+    double p = m[i*m_cols + i];
     if (p == 0) {
         // where do we go?
-        long new_row = -1;
+        long new_row = i;
         double max_row = 0;
-        for (j = i+1; j < m->rows; j++) {
-            temp = fabs(m->data[j][i]);
-            if ((i != j) && (temp*m->data[i][j] != 0) && (temp >= max_row)) {
+        for (j = i+1; j < m_rows; j++) {
+            temp = fabs(m[j*m_cols + i]);
+            if ((i != j) && (temp*m[i*m_cols + j] != 0) && (temp >= max_row)) {
                 max_row = temp;
                 new_row = j;
             }
         }
         // swap cur_row with new_row
-        if (new_row == -1) {
-            printf("matriks tidak memiliki solusi\n");
-        } else {
-            //printf("nr %ld\n", new_row);
-            for (j = 0; j < m->cols; j++) {
-                d[j] = m->data[new_row][j];
-                m->data[new_row][j] = m->data[i][j];
-                m->data[i][j] = d[j];
-            }
+        for (j = 0; j < m_cols; j++) {
+            d[j] = m[new_row*m_cols + j];
+            m[new_row*m_cols + j] = m[i*m_cols + j];
+            m[i*m_cols + j] = d[j];
         }
     }
     free(d);
 }
 
-void gaussjordan(matrix *a, double *b, double* c) {
+__global__ void gaussjordan(double *a, double *b, double* c, long a_rows) {
     long i, j, k;
 
     // combine left and right sides
-    matrix *m = m_init(a->rows, a->cols+1);
-    for (i = 0; i < m->rows; i++) {
-        for (j = 0; j < a->cols; j++) {
-            m->data[i][j] = a->data[i][j];
+    double *m;
+    long m_rows, m_cols;
+    m_rows = a_rows;
+    m_cols = a_rows + 1;
+    m = (double *) malloc(m_rows*m_cols*sizeof(double));
+
+    for (i = 0; i < m_rows; i++) {
+        for (j = 0; j < a_rows; j++) {
+            m[i*a_rows + j] = a[i*a_rows + j];
         }
-        m->data[i][m->cols-1] = b[i];
+        m[i*a_rows + a_rows] = b[i];
     }
 
-    for (i = 0; i < m->rows; i++) {
+    for (i = 0; i < m_rows; i++) {
         // pivot
-        pivot(m, i);
+        pivot(m, m_rows, m_cols, i);
         // normalize row
-        double pivot = m->data[i][i];
-        for (k = 0; k < m->cols; k++) {
-            m->data[i][k] /= pivot;
+        double pivot = m[i*m_cols + i];
+        for (k = 0; k < m_cols; k++) {
+            m[i*m_cols + k] /= pivot;
         }
         // subtract row from all other rows
-        for (j = 0; j < m->rows; j++) {
+        for (j = 0; j < m_rows; j++) {
             if (j != i) {
-                double n_pivot = m->data[j][i];
-                for (k = 0; k < m->cols; k++) {
-                    m->data[j][k] -= n_pivot * m->data[i][k];
+                double n_pivot = m[j*m_cols + i];
+                for (k = 0; k < m_cols; k++) {
+                    m[j*m_cols + k] -= n_pivot * m[i*m_cols + k];
                 }
             }
         }
     }
 
     // forward substitution
-    for (i = 0; i < m->rows; i++) {
-        c[i] = m->data[i][m->cols-1];
+    for (i = 0; i < m_rows; i++) {
+        c[i] = m[i*m_cols + m_cols-1];
     }
-    m_del(m);
+    free(m);
 }
 
-void gaussnaive(matrix *a, double *b, double *c) {
+__global__ void gaussnaive(double *a, double *b, double *c, long a_rows) {
     long i, j, k;
 
     // combine left and right sides
-    matrix *m = m_init(a->rows, a->cols+1);
-    for (i = 0; i < m->rows; i++) {
-        for (j = 0; j < a->cols; j++) {
-            m->data[i][j] = a->data[i][j];
+    double *m, *d;
+    long m_rows = a_rows;
+    long m_cols = a_rows + 1;
+    m = (double *) malloc(m_rows*m_cols*sizeof(double));
+    d = (double *) malloc(m_rows*sizeof(double));
+
+    for (i = 0; i < m_rows; i++) {
+        for (j = 0; j < m_rows; j++) {
+            m[i*m_cols + j] = a[i*m_rows + j];
         }
-        m->data[i][m->cols-1] = b[i];
+        m[i*m_cols + m_rows] = b[i];
+        d[i] = 0.f;
     }
 
     // forward elimination
-    for (i = 0; i < m->rows; i++) {
+    for (i = 0; i < m_rows; i++) {
         // pivot
-        pivot(m, i);
+        pivot(m, m_rows, m_cols, i);
         // subtract row from all subsequent rows
-        for (j = i+1; j < m->rows; j++) {
-            double n_pivot = m->data[j][i]/m->data[i][i];
-            for (k = 0; k < m->cols; k++) {
-                m->data[j][k] -= n_pivot * m->data[i][k];
+        for (j = i+1; j < m_rows; j++) {
+            double n_pivot = m[j*m_cols + i]/m[i*m_cols + i];
+            for (k = 0; k < m_cols; k++) {
+                m[j*m_cols + k] -= n_pivot * m[i*m_cols + k];
             }
         }
     }
 
     // back substitution
-    for (i = m->rows-1; i >=0; i--) {
-        double sum = m->data[i][m->cols-1];
-        for (j = i; j < m->cols-1; j++) {
-            sum -= m->data[i][j]*c[j];
+    for (i = m_rows-1; i >=0; i--) {
+        double sum = m[i*m_cols + m_rows];
+        for (j = i; j < m_rows; j++) {
+            sum -= m[i*m_cols + j]*d[j];
         }
-        c[i] = sum/m->data[i][i];
+        c[i] = sum/m[i*m_cols + i];
+        d[i] = c[i];
     }
+
+    if (DEBUG) {
+        for (i = 0; i < m_rows; i++) {
+            for (j = 0; j < m_rows; j++) {
+                a[i*a_rows + j] = m[i*m_cols + j];
+            }
+            b[i] = m[i*m_cols + m_rows];
+        }
+    }
+
     // free matrix
-    m_del(m);
+    free(m);
+    free(d);
 }
 
-void doolittle(matrix *a, double *b, double *c) {
+__global__ void doolittle(double *a, double *b, double *c, long a_rows) {
     long i, j, k;
-    long n = a->rows;
+    long n = a_rows;
 
     // create and initialize lower, upper, and intermediate results  matrixes
-    matrix *l = m_init(n, n);
-    matrix *u = m_init(n, n+1);
-    double *d = (double *)malloc(n*sizeof(double));
+    double *l, *u, *d, *temp;
+    l = (double *) malloc(n*n*sizeof(double));
+    u = (double *) malloc(n*(n+1)*sizeof(double));
+    d = (double *) malloc(n*sizeof(double));
+    temp = (double *) malloc(n*sizeof(double));
+
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
-            u->data[i][j] = a->data[i][j];
+            u[i*(n+1) + j] = a[i*n + j];
         }
-        u->data[i][n] = b[i];
-        l->data[i][i] = 1.f;
+        u[i*(n+1) + n] = b[i];
+        l[i*n + i] = 1.f;
         d[i] = 0.f;
+        temp[i] = 0.f;
     }
 
     // decomposition
     for (i = 0; i < n; i++) {
         // pivot
-        pivot(u, i);
+        pivot(u, n, n+1, i);
         // subtract row from all subsequent rows
         for (j = i+1; j < n; j++) {
-            double n_pivot = u->data[j][i]/u->data[i][i];
-            l->data[j][i] = n_pivot;
+            double n_pivot = u[j*(n+1) + i]/u[i*(n+1) + i];
+            l[j*n + i] = n_pivot;
             for (k = 0; k < n; k++) {
-                u->data[j][k] -= n_pivot * u->data[i][k];
+                u[j*(n+1) + k] -= n_pivot * u[i*(n+1) + k];
             }
         }
     }
 
     // forward substitution
     for (i = 0; i < n; i++) {
-        double sum = u->data[i][n];
+        double sum = u[i*(n+1) + n];
         for (j = 0; j <= i; j++) {
-            sum -= l->data[i][j] * d[j];
+            sum -= l[i*n + j] * temp[j];
         }
-        d[i] = sum/l->data[i][i];
+        d[i] = sum/l[i*n + i];
+        temp[i] = d[i];
+    }
+
+    for (i = 0; i < n; i++) {
+        temp[i] = 0.f;
     }
 
     // back substitution
     for (i = n-1; i >=0; i--) {
         double sum = d[i];
         for (j = i; j < n; j++) {
-            sum -= u->data[i][j] * c[j];
+            sum -= u[i*(n+1) + j] * temp[j];
         }
-        c[i] = sum/u->data[i][i];
+        c[i] = sum/u[i*(n+1) + i];
+        temp[i] = c[i];
     }
-    m_del(l);
-    m_del(u);
+
+    free(l);
+    free(u);
     free(d);
+    free(temp);
 }
 
-void crout(matrix *a, double *b, double *c) {
+__global__ void crout(double *a, double *b, double *c, long a_rows) {
     long i, j, k;
-    long n = a->rows;
+    long n = a_rows;
     double sum;
 
-    matrix *l = m_init(n, n);
-    matrix *u = m_init(n, n+1);
+    double *l, *u, *d;
+    l = (double *) malloc(n*n*sizeof(double));
+    u = (double *) malloc(n*(n+1)*sizeof(double));
+    d = (double *) malloc(n*sizeof(double));
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
-            u->data[i][j] = a->data[i][j];
+            u[i*n + j] = a[i*n + j];
         }
-        u->data[i][n] = b[i];
-        l->data[i][i] = 1.f;
+        u[i*n + n] = b[i];
+        l[i*n + i] = 1.f;
+        d[i] = 0.f;
     }
 
     // decomposition
     for (i = 0; i < n; i++) {
         // pivot
-        pivot(u, i);
+        pivot(u, n, n+1,  i);
         // normalize
-        double f_pivot = u->data[i][i];
-        l->data[i][i] = f_pivot;
+        double f_pivot = u[i*n + i];
+        l[i*n + i] = f_pivot;
         for (k = i; k < n; k++) {
-            u->data[i][k] /= f_pivot;
+            u[i*n + k] /= f_pivot;
         }
         // subtract for all subsequent rows
         for (j = i+1; j < n; j++) {
-            double n_pivot = u->data[j][i];
-            l->data[j][i] = n_pivot;
+            double n_pivot = u[j*n + i];
+            l[j*n + i] = n_pivot;
             for (k = 0; k < n; k++) {
-                u->data[j][k] -= n_pivot * u->data[i][k];
+                u[j*n + k] -= n_pivot * u[i*n + k];
             }
         }
     }
 
     // forward substitution
-    double *d = (double *) malloc(n*sizeof(double));
     for (i = 0; i < n; i++) {
-        d[i] = 0.f;
-    }
-
-    for (i = 0; i < n; i++) {
-        sum = u->data[i][n];
+        sum = u[i*n + n];
         for (j = 0; j <= i; j++) {
-            sum -= l->data[i][j] * d[j];
+            sum -= l[i*n + j] * d[j];
         }
-        d[i] = sum/l->data[i][i];
+        d[i] = sum/l[i*n + i];
     }
 
     // back substitution
     for (i = n-1; i >=0; i--) {
         sum = d[i];
         for (j = i; j < n; j++) {
-            sum -= u->data[i][j] * c[j];
+            sum -= u[i*n + j] * c[j];
         }
-        c[i] = sum/u->data[i][i];
+        c[i] = sum/u[i*n + i];
     }
-    m_del(l);
-    m_del(u);
+    free(l);
+    free(u);
     free(d);
 }
 
-__global__ void jacobi(matrix *a, double *b, double *c) {
+__global__ void jacobi(double *a, double *b, double *c, long a_rows) {
     long i, k;
-    long n = a->rows;
+    long n = a_rows;
     int iter = 0;
     double tot_err = INF;
     double sum;
 
-    matrix *m = m_init(n, n+1);
+    double *m, *c_prev;
+    m = (double *) malloc(n*(n+1)*sizeof(double));
+    c_prev = (double *) malloc(n*sizeof(double));
+
     for (i = 0; i < n; i++) {
         for (k = 0; k < n; k++) {
-            m->data[i][k] = a->data[i][k];
+            m[i*n + k] = a[i*n + k];
         }
-        m->data[i][n] = b[i];
-    }
-
-    double *c_prev = (double *)malloc(n*sizeof(double));
-    for (i = 0; i < n; i++) {
+        m[i*n + n] = b[i];
         c[i] = INIT_JACOBI;
         c_prev[i] = INIT_JACOBI;
     }
@@ -261,19 +288,20 @@ __global__ void jacobi(matrix *a, double *b, double *c) {
             sum = 0;
             for (k = 0; k < n; k++) {
                 if (k != i)
-                    sum += c[k] * m->data[i][k];
+                    sum += c[k] * m[i*(n+1) + k];
             }
-            c[i]= (m->data[i][n] - sum)/m->data[i][i];
+            c[i]= (m[i*(n+1) + n] - sum)/m[i*(n+1) + i];
             if (c[i] != 0)
                 tot_err += fabs((c[i] - c_prev[i])/c[i]);
             c_prev[i] = c[i];
         }
         tot_err /= n;
     }
-
-    m_del(m);
+    free(m);
     free(c_prev);
 }
+
+typedef double (*function) (double x);
 
 double f1a(double x) {
     double fx = (x*pow(2.1 - 0.5*x, 0.5)/((1-x)*pow(1.1-0.5*x, 0.5)))-3.69;

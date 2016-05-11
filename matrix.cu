@@ -59,24 +59,21 @@ matrix *m_slice(matrix *m, long r_start, long r_stop, long c_start, long c_stop)
 }
 
 // Calculates the dot product of A and B and stores results in C.
-__global__ void m_dot(matrix *a, matrix *b, matrix *c) {
+__global__ void m_dot(double *c, double *a, double *b, long a_rows, long a_cols, long b_rows, long b_cols) {
     long i, j, k;
     double sum = 0;
 
-    if (a->cols != b->rows) {
+    if (a_cols != b_rows) {
         printf("these matrices cannot be multiplied!\n");
     }
-    if ((c->rows != a->rows) | (c->cols != b->cols)) {
-        printf("size of output matrix invalid!\n");
-    }
 
-    for (i = 0; i < c->rows; i++) {
-        for (j = 0; j < c->cols; j++) {
+    for (i = 0; i < a_rows; i++) {
+        for (j = 0; j < b_cols; j++) {
             sum = 0;
-            for (k = 0; k < a->cols; k++) {
-                sum += a->data[i*a->cols + k]*b->data[k*b->cols + j];
+            for (k = 0; k < a_cols; k++) {
+                sum += a[i*a_cols + k]*b[k*b_rows + j];
             }
-            c->data[i*c->cols + j] = sum;
+            c[i*b_cols + j] = sum;
         }
     }
 }
@@ -93,13 +90,13 @@ void m_rand(matrix *m) {
     }
 }
 
-void m_hilbert(matrix *m) {
-    long n = m->rows;
+__global__ void m_hilbert(double *m, long size) {
+    long n = size;
     long i, j;
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
-            m->data[i*n + j] = 1.f/(i + j + 1);
+            m[i*n + j] = 1.f/(i + j + 1);
         }
     }
 }
