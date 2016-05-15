@@ -6,6 +6,12 @@
 #define MAX_ERR 0.0001
 #define INIT_JACOBI 0
 #define DEBUG 1
+#define N 7
+
+// enumerate method names
+enum method {
+    NAIVE, JORDAN, DOOLITTLE, CROUT, JACOBI, BISECT, FALSI, SECANT, NEWTON
+};
 
 __device__ void pivot(double *m, long n, long cur_row) {
     long i = cur_row;
@@ -271,97 +277,98 @@ __global__ void jacobi(double *a, double *b, double *c, long n) {
     free(c_prev);
 }
 
-typedef double (*function) (double x);
-
-double f1a(double x) {
+__device__ __host__ double f1a(double x) {
     double fx = (x*pow(2.1 - 0.5*x, 0.5)/((1-x)*pow(1.1-0.5*x, 0.5)))-3.69;
     return fx;
 }
 
-double f1b(double x) {
+__device__ __host__ double f1b(double x) {
     double fx = tan(x) - x + 1;
     return fx;
 }
 
-double f1c(double x) {
+__device__ __host__ double f1c(double x) {
     double fx = 0.5*exp(x/3) - sin(x);
     return fx;
 }
 
-double f2(double x) {
+__device__ __host__ double f2(double x) {
     double fx = 80*exp(-2.f*x) + 20*exp(-0.1*x);
     return fx;
 }
 
-double df2(double x) {
+__device__ __host__ double df2(double x) {
     double dfx;
     dfx = 160*exp(-2*x) + 2*exp(-0.1*x);
     return(dfx);
 }
 
-double f3(double x) {
+__device__ __host__ double f3(double x) {
     double dx = (70 + 1.463/pow(x,2))*(x-0.0394) - 0.08314*215;
     return dx;
 }
 
-double df3(double x) {
+__device__ __host__ double df3(double x) {
     double dfx = 70 - (1.463/pow(x,2)) + (0.115284/pow(x,3));
     return dfx;
 }
 
-double bisection(function f, double xmin, double xmax) {
+typedef double (*ptr_func_t) (double x);
+__device__ ptr_func_t dev_func[N] = {f1a, f1b, f1c, f2, df2, f3, df3};
+__device__ double y;
+
+__global__ void bisection(ptr_func_t *f, int m, double xmin, double xmax) {
     double xmid, xmid_prev, test;
     double ea = INF;
     long iter = 0;
     xmid = xmin;
 
-    if (f(xmin)*f(xmax) > 0) {
-        printf("rentang tidak valid ");
-        return 0;
-    }
+    if (f[m](xmin)*f[m](xmax) > 0) {
+        y = INF;
+    } else {
 
-    while (ea > MAX_ERR && iter < MAX_ITER) {
-        iter++;
-        xmid_prev = xmid;
-        xmid = 0.5*(xmin + xmax);
-        ea = fabs((xmid - xmid_prev)/xmid);
-        test = f(xmid)*f(xmin);
-        if (test < 0)
-            xmax = xmid;
-        else
-            xmin = xmid;
+        while (ea > MAX_ERR && iter < MAX_ITER) {
+            iter++;
+            xmid_prev = xmid;
+            xmid = 0.5*(xmin + xmax);
+            ea = fabs((xmid - xmid_prev)/xmid);
+            test = f[m](xmid)*f[m](xmin);
+            if (test < 0)
+                xmax = xmid;
+            else
+                xmin = xmid;
+        }
+        y = xmid;
     }
-    return xmid;
 }
 
-double falsepos(function f, double xmin, double xmax) {
+__global__ void falsepos(ptr_func_t *f, int m, double xmin, double xmax) {
     double xl, xu, xr;
     xl = xmin;
     xu = xmax;
     long iter = 0;
 
-    if (f(xl)*f(xu) > 0) {
-        printf("rentang tidak valid ");
-        return 0;
+    if (f[m](xl)*f[m](xu) > 0) {
+        y = INF;
+    } else {
+        xr = xu - (f[m](xu)*(xl - xu)/(f[m](xl) - f[m](xu)));
+        while (fabs(xl - xu) > MAX_ERR && iter < MAX_ITER) {
+            iter++;
+            if (f[m](xl)*f[m](xr) < 0)
+                xu = xr;
+            else
+                xl = xr;
+            xr = xu - (f[m](xu)*(xl-xu)/(f[m](xl)-f[m](xu)));
+        }
+        y = xr;
     }
-
-    xr = xu - (f(xu)*(xl - xu)/(f(xl) - f(xu)));
-    while (fabs(xl - xu) > MAX_ERR && iter < MAX_ITER) {
-        iter++;
-        if (f(xl)*f(xr) < 0)
-            xu = xr;
-        else
-            xl = xr;
-        xr = xu - (f(xu)*(xl-xu)/(f(xl)-f(xu)));
-    }
-    return xr;
 }
 
-double secant(function f, double x1, double x2) {
+__global__ void secant(ptr_func_t *f, int m, double x1, double x2) {
     double x3, er, eps;
     int iter = 0;
 
-    x3 = x2 - f(x2)*(x1 - x2)/(f(x1) - f(x2));
+    x3 = x2 - f[m](x2)*(x1 - x2)/(f[m](x1) - f[m](x2));
     er = fabs(x3 - x2);
     eps = 2*er/(fabs(x3) + MAX_ERR);
 
@@ -369,26 +376,26 @@ double secant(function f, double x1, double x2) {
         iter++;
         x1 = x2;
         x2 = x3;
-        x3 = x2 - f(x2)*(x1 - x2)/(f(x1) - f(x2));
+        x3 = x2 - f[m](x2)*(x1 - x2)/(f[m](x1) - f[m](x2));
         er = fabs(x3 - x2);
         eps = 2*er/(fabs(x3) + MAX_ERR);
     }
-    return x3;
+    y = x3;
 }
 
-double newton(function f, function df, double x) {
+__global__ void newton(ptr_func_t *f, int m, int n, double x) {
     double xr, xn, ea;
     ea = INF;
     xr = x;
     int iter = 0;
 
-    xn = xr - f(xr)/df(xr);
+    xn = xr - f[m](xr)/f[n](xr);
     while (ea > MAX_ERR && iter < MAX_ITER) {
         iter++;
         if (xn != 0)
             ea = fabs((xn - xr)/xr);
         xr = xn;
-        xn = xr - f(xr)/df(xr);
+        xn = xr - f[m](xr)/f[n](xr);
     }
-    return xn;
+    y = xn;
 }
