@@ -333,31 +333,52 @@ double bisection(function f, double xmin, double xmax) {
         test = f(xmid)*f(xmin);
         if (test < 0)
             xmax = xmid;
-        else
+        else if (test > 0)
             xmin = xmid;
     }
     return xmid;
 }
 
 double falsepos(function f, double xmin, double xmax) {
-    double xl, xu, xr;
+    double xl = xmin, xu = xmax, xr, xr_old, temp, ea = INF, il, iu;
     xl = xmin;
     xu = xmax;
+    double fl = f(xl);
+    double fu = f(xu);
+    double fr;
     long iter = 0;
 
-    if (f(xl)*f(xu) > 0) {
+    if (fl*fu > 0) {
         printf("rentang tidak valid ");
         return 0;
     }
 
-    xr = xu - (f(xu)*(xl - xu)/(f(xl) - f(xu)));
-    while (fabs(xl - xu) > MAX_ERR && iter < MAX_ITER) {
+    while (ea > MAX_ERR && iter < MAX_ITER) {
         iter++;
-        if (f(xl)*f(xr) < 0)
+        xr_old = xr;
+        xr = xu - fu*(xl - xu)/(fl - fu);
+        fr = f(xr);
+        if (xr != 0)
+            ea = fabs((xr - xr_old)/xr)*100;
+        temp = fl*fr;
+        if (temp < 0) {
             xu = xr;
-        else
+            fu = f(xu);
+            iu = 0;
+            il++;
+            if (il >= 2)
+                fl *= 0.5;
+        }
+        else if(temp > 0) {
             xl = xr;
-        xr = xu - (f(xu)*(xl-xu)/(f(xl)-f(xu)));
+            fl = f(xl);
+            il = 0;
+            iu++;
+            if (iu >=2)
+                fu *= 0.5;
+        }
+        else
+            ea = 0;
     }
     return xr;
 }
