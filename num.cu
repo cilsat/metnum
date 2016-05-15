@@ -1,4 +1,4 @@
-#include <string.h>
+#include <stdio.h>
 #include <math.h>
 
 #define INF 99999
