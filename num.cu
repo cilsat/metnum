@@ -1,3 +1,6 @@
+#ifndef __NUM_CU__
+#define __NUM_CU__
+
 #include <stdio.h>
 #include <math.h>
 
@@ -317,13 +320,13 @@ typedef double (*ptr_func_t) (double x);
 __device__ ptr_func_t dev_func[N] = {f1a, f1b, f1c, f2, df2, f3, df3};
 __device__ double y;
 
-__global__ void bisection(ptr_func_t *f, int m, double xmin, double xmax) {
+__global__ void bisection(int m, double xmin, double xmax) {
     double xmid, xmid_prev, test;
     double ea = INF;
     long iter = 0;
     xmid = xmin;
 
-    if (f[m](xmin)*f[m](xmax) > 0) {
+    if (dev_func[m](xmin)*dev_func[m](xmax) > 0) {
         y = INF;
     } else {
 
@@ -332,7 +335,7 @@ __global__ void bisection(ptr_func_t *f, int m, double xmin, double xmax) {
             xmid_prev = xmid;
             xmid = 0.5*(xmin + xmax);
             ea = fabs((xmid - xmid_prev)/xmid);
-            test = f[m](xmid)*f[m](xmin);
+            test = dev_func[m](xmid)*dev_func[m](xmin);
             if (test < 0)
                 xmax = xmid;
             else
@@ -342,33 +345,33 @@ __global__ void bisection(ptr_func_t *f, int m, double xmin, double xmax) {
     }
 }
 
-__global__ void falsepos(ptr_func_t *f, int m, double xmin, double xmax) {
+__global__ void falsepos(int m, double xmin, double xmax) {
     double xl, xu, xr;
     xl = xmin;
     xu = xmax;
     long iter = 0;
 
-    if (f[m](xl)*f[m](xu) > 0) {
+    if (dev_func[m](xl)*dev_func[m](xu) > 0) {
         y = INF;
     } else {
-        xr = xu - (f[m](xu)*(xl - xu)/(f[m](xl) - f[m](xu)));
+        xr = xu - (dev_func[m](xu)*(xl - xu)/(dev_func[m](xl) - dev_func[m](xu)));
         while (fabs(xl - xu) > MAX_ERR && iter < MAX_ITER) {
             iter++;
-            if (f[m](xl)*f[m](xr) < 0)
+            if (dev_func[m](xl)*dev_func[m](xr) < 0)
                 xu = xr;
             else
                 xl = xr;
-            xr = xu - (f[m](xu)*(xl-xu)/(f[m](xl)-f[m](xu)));
+            xr = xu - (dev_func[m](xu)*(xl-xu)/(dev_func[m](xl)-dev_func[m](xu)));
         }
         y = xr;
     }
 }
 
-__global__ void secant(ptr_func_t *f, int m, double x1, double x2) {
+__global__ void secant(int m, double x1, double x2) {
     double x3, er, eps;
     int iter = 0;
 
-    x3 = x2 - f[m](x2)*(x1 - x2)/(f[m](x1) - f[m](x2));
+    x3 = x2 - dev_func[m](x2)*(x1 - x2)/(dev_func[m](x1) - dev_func[m](x2));
     er = fabs(x3 - x2);
     eps = 2*er/(fabs(x3) + MAX_ERR);
 
@@ -376,7 +379,7 @@ __global__ void secant(ptr_func_t *f, int m, double x1, double x2) {
         iter++;
         x1 = x2;
         x2 = x3;
-        x3 = x2 - f[m](x2)*(x1 - x2)/(f[m](x1) - f[m](x2));
+        x3 = x2 - dev_func[m](x2)*(x1 - x2)/(dev_func[m](x1) - dev_func[m](x2));
         er = fabs(x3 - x2);
         eps = 2*er/(fabs(x3) + MAX_ERR);
     }
@@ -399,3 +402,5 @@ __global__ void newton(ptr_func_t *f, int m, int n, double x) {
     }
     y = xn;
 }
+
+#endif

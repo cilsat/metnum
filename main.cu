@@ -6,15 +6,15 @@
 #define GRID_SIZE 9
 #define BLOCK_SIZE 9
 #define MATRIX_SIZE 3
-#define METHOD BISECT
+#define METHOD SECANT
+#define PI 3.14159
 #define X0 0.001
-#define X1 0.999
+#define X1 2.999*PI
 #define FX 0
-#define N 7
 
 // matrix and numerical function pointers
 typedef void (*m_func) (double *A, double *b, double *c, long n);
-typedef void (*n_func) (ptr_func_t* f, int m, double x0, double x1);
+typedef void (*n_func) (int m, double x0, double x1);
 
 void m_calc(enum method m, char *file) {
     // read file
@@ -98,37 +98,32 @@ void m_calc(enum method m, char *file) {
     else if ((m == 5) | (m == 6) | (m == 7)) {
         // initialize variables
         n_func f;
-        ptr_func_t *dfunc, *hfunc;
         double x0, x1;
         typeof(y) hy;
         x0 = X0;
         x1 = X1;
 
-        hfunc = (ptr_func_t *) malloc(N*sizeof(ptr_func_t));
-        cudaMalloc((void **) &dfunc, N*sizeof(ptr_func_t));
-        for (int i = 0; i < N; i++) {
-            cudaMemcpyFromSymbol(&hfunc[i], dev_func[i], sizeof(ptr_func_t));
-        }
-
         switch(m) {
         case BISECT:
             f = bisection;
+            printf("Bisection\n");
             break;
         case SECANT:
             f = secant;
+            printf("Secant\n");
             break;
         case FALSI:
             f = falsepos;
+            printf("False Position\n");
             break;
         }
 
-        f<<< GRID_SIZE, 1 >>>(dfunc, FX, x0, x1);
-
-        cudaMemcpyFromSymbol(&hy, y, sizeof(hy), 0, cudaMemcpyDeviceToHost);
-        printf("%.5f", hy);
-
-        cudaFree(dfunc);
-        free(hfunc);
+        for (int i = 0; i < N; i++) {
+            printf("x0=%.3f x1=%.3f y=", x0, x1);
+            f<<< GRID_SIZE, 1 >>>(i, x0, x1);
+            cudaMemcpyFromSymbol(&hy, y, sizeof(hy), 0, cudaMemcpyDeviceToHost);
+            printf("%.5f\n", hy);
+        }
     }
     else if (m == 8) { // Newton Rhapson
     }
